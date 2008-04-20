@@ -50,10 +50,10 @@ void cb_month_changed(GtkWidget *calendar)
         gtk_calendar_mark_day(GTK_CALENDAR(calendar), tm->tm_mday);	
 }
 
-void setup_widgets(int width, int height)
+void setup_widgets(int x, int y)
 {
     GtkWidget *window, *vbox, *calendar, *button;
-    gint options_mask, x, y;
+    gint options_mask, width, height;
 
     options_mask = GTK_CALENDAR_SHOW_HEADING |
                    GTK_CALENDAR_SHOW_DAY_NAMES |
@@ -82,11 +82,11 @@ void setup_widgets(int width, int height)
     GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
     gtk_widget_grab_default(button);
 
-    gtk_window_move(GTK_WINDOW(window), width , height); /* move outside */
+    gtk_window_move(GTK_WINDOW(window), x , y); /* move outside */
     gtk_widget_show_all(window);
 
-    gtk_window_get_size(GTK_WINDOW(window), &x, &y);
-    gtk_window_move(GTK_WINDOW(window), width-x , height-y);
+    gtk_window_get_size(GTK_WINDOW(window), &width, &height);
+    gtk_window_move(GTK_WINDOW(window), x-width , y-height);
 }
 
 int main(int argc, char **argv)
