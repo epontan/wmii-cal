@@ -1,0 +1,18 @@
+wmii-cal - calendar for wmii
+---------------------------------------------------------------------
+
+1. Introduction
+wmii-cal is a simple calendar that will position itself dependant on
+the wmiibar.
+
+2. Prerequisites
+You will need the essential build tools (gcc, make, etc.), and
+development headers of xlib and gtk+-2.0.
+
+3. Installation
+Edit the config.mk to suit your desired setup.
+Run "make" to build securezone and then run "make install" to install
+it to your system (NOTE! You may need to be root for this).
+
+4. Authors
+Pontus Andersson <a.pontus (at) gmail (dot) com>
