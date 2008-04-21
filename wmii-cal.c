@@ -50,7 +50,7 @@ void cb_month_changed(GtkWidget *calendar)
         gtk_calendar_mark_day(GTK_CALENDAR(calendar), tm->tm_mday);	
 }
 
-void setup_widgets(int x, int y)
+void setup_widgets(int x, int y, gboolean no_close)
 {
     GtkWidget *window, *vbox, *calendar, *button;
     gint options_mask, width, height;
@@ -75,12 +75,14 @@ void setup_widgets(int x, int y)
     cb_month_changed(calendar);
     gtk_container_add(GTK_CONTAINER(vbox), calendar);
 
-    button = gtk_button_new_with_label("Close");
-    g_signal_connect(G_OBJECT(button), "clicked", 
-            G_CALLBACK(gtk_main_quit), NULL);
-    gtk_container_add(GTK_CONTAINER(vbox), button);
-    GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
-    gtk_widget_grab_default(button);
+    if(!no_close) {
+        button = gtk_button_new_with_label("Close");
+        g_signal_connect(G_OBJECT(button), "clicked", 
+                G_CALLBACK(gtk_main_quit), NULL);
+        gtk_container_add(GTK_CONTAINER(vbox), button);
+        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+        gtk_widget_grab_default(button);
+    }
 
     gtk_window_move(GTK_WINDOW(window), x , y); /* move outside */
     gtk_widget_show_all(window);
@@ -93,29 +95,34 @@ int main(int argc, char **argv)
 {
     Display *dpy;
     char *font;
+    gboolean no_close;
     int width, height;
     int i;
 
     dpy = XOpenDisplay(getenv("DISPLAY"));
     font = NULL;
+    no_close = FALSE;
     width = DisplayWidth(dpy, DefaultScreen(dpy));
     height = DisplayHeight(dpy, DefaultScreen(dpy));
 
     for(i = 1; i < argc; i++)
-        if(!strcmp(argv[i], "-fn")) {
-            if(++i < argc) font = argv[i];
+        if(!strcmp(argv[i], "-nc")) {
+            no_close = TRUE;
         }
+        else if(!strcmp(argv[i], "-fn")) {
+            if(++i < argc) font = argv[i];
+        }    
         else if(!strcmp(argv[i], "-v")) {
 			printf("wmii-cal-1.0, © 2008 Pontus Andersson\n");
             exit(EXIT_SUCCESS);
         }
         else if(!strcmp(argv[i], "-h")) {
-			printf("usage: wmii-cal [-fn <wmii_font>]\n");
+			printf("usage: wmii-cal [-nc] [-fn <wmii_font>]\n");
             exit(EXIT_SUCCESS);
         }    
 
     gtk_init(&argc, &argv);
-    setup_widgets(width, height - get_wmii_offset(dpy, font));
+    setup_widgets(width, height - get_wmii_offset(dpy, font), no_close);
     gtk_main();
 
     return EXIT_SUCCESS;
