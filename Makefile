@@ -1,7 +1,10 @@
 # wmii-cal - calendar for wmii
-# © 2008 Pontus Andersson
 
 include config.mk
+sinclude config.local.mk
+
+# wmii-cal version
+VERSION = 0.9
 
 BIN = wmii-cal
 SRC = wmii-cal.c
@@ -14,16 +17,27 @@ options:
 	@echo "CFLAGS   = ${CFLAGS}"
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
+	@echo "LD       = ${LD}"
 
-.c.o:
-	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+${BIN}: ${OBJ}
+	@echo LD $@
+	@${LD} -o $@ ${OBJ} ${LDFLAGS}
+	@if [ -z "${DEBUG}" ]; then echo "Stripping $@"; strip $@; fi
+
+${BINDIR}:
+	@mkdir -p ${BINDIR}
 
 ${OBJ}: config.mk
 
-${BIN}: ${OBJ}
-	@echo CC -o $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+.c.o:
+	@echo CC $@
+	@${CC} -c ${CFLAGS} $<
+
+debug: DEBUG = -ggdb
+debug: all
+
+test: CFLAGS += -DTEST
+test: debug
 
 clean:
 	@echo cleaning
@@ -47,4 +61,4 @@ uninstall:
 	@echo removing executable file from ${DESTDIR}${PREFIX}/bin
 	@rm -f ${DESTDIR}${PREFIX}/bin/${BIN}
 
-.PHONY: all options clean dist install uninstall
+.PHONY: all test debug options clean dist install uninstall

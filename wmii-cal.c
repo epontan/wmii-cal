@@ -21,13 +21,14 @@
 #include <string.h>
 #include <time.h>
 #include <X11/Xlib.h>
+#include <X11/extensions/Xinerama.h>
 #include <gtk/gtk.h>
 
 int get_wmii_offset(Display *dpy, const char *font) {
     XFontStruct *xfont;
 
-	if(font && font[0] != '\0' && (xfont = XLoadQueryFont(dpy, font))) {
-        return xfont->ascent + xfont->descent + 2;
+    if(font && font[0] != '\0' && (xfont = XLoadQueryFont(dpy, font))) {
+        return xfont->ascent + xfont->descent + 4;
     }
     else {
         return 0;
@@ -47,7 +48,7 @@ void cb_month_changed(GtkWidget *calendar)
 
     gtk_calendar_clear_marks(GTK_CALENDAR(calendar));
     if(tm->tm_year == (year-1900) && tm->tm_mon == month)
-        gtk_calendar_mark_day(GTK_CALENDAR(calendar), tm->tm_mday);	
+        gtk_calendar_mark_day(GTK_CALENDAR(calendar), tm->tm_mday);
 }
 
 void setup_widgets(int x, int y, gboolean no_close)
@@ -56,8 +57,8 @@ void setup_widgets(int x, int y, gboolean no_close)
     gint options_mask, width, height;
 
     options_mask = GTK_CALENDAR_SHOW_HEADING |
-                   GTK_CALENDAR_SHOW_DAY_NAMES |
-                   GTK_CALENDAR_SHOW_WEEK_NUMBERS;
+        GTK_CALENDAR_SHOW_DAY_NAMES |
+        GTK_CALENDAR_SHOW_WEEK_NUMBERS;
 
     window = gtk_window_new(GTK_WINDOW_POPUP);
     g_signal_connect(G_OBJECT(window), "destroy",
@@ -70,21 +71,21 @@ void setup_widgets(int x, int y, gboolean no_close)
 
     calendar=gtk_calendar_new();
     gtk_calendar_set_display_options(GTK_CALENDAR(calendar), options_mask);
-    g_signal_connect(G_OBJECT(calendar), "month_changed", 
+    g_signal_connect(G_OBJECT(calendar), "month_changed",
             G_CALLBACK(cb_month_changed), NULL);
     cb_month_changed(calendar);
     gtk_container_add(GTK_CONTAINER(vbox), calendar);
 
     if(!no_close) {
         button = gtk_button_new_with_label("Close");
-        g_signal_connect(G_OBJECT(button), "clicked", 
+        g_signal_connect(G_OBJECT(button), "clicked",
                 G_CALLBACK(gtk_main_quit), NULL);
         gtk_container_add(GTK_CONTAINER(vbox), button);
         GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
         gtk_widget_grab_default(button);
     }
 
-    gtk_window_move(GTK_WINDOW(window), x , y); /* move outside */
+    gtk_window_move(GTK_WINDOW(window), x, y); /* move outside */
     gtk_widget_show_all(window);
 
     gtk_window_get_size(GTK_WINDOW(window), &width, &height);
@@ -94,35 +95,47 @@ void setup_widgets(int x, int y, gboolean no_close)
 int main(int argc, char **argv)
 {
     Display *dpy;
+    XineramaScreenInfo *xsi;
     char *font;
     gboolean no_close;
-    int width, height;
+    int x, y;
     int i;
 
-    dpy = XOpenDisplay(getenv("DISPLAY"));
-    font = NULL;
     no_close = FALSE;
-    width = DisplayWidth(dpy, DefaultScreen(dpy));
-    height = DisplayHeight(dpy, DefaultScreen(dpy));
+    font = NULL;
 
-    for(i = 1; i < argc; i++)
+    for(i = 1; i < argc; i++) {
         if(!strcmp(argv[i], "-nc")) {
             no_close = TRUE;
         }
         else if(!strcmp(argv[i], "-fn")) {
             if(++i < argc) font = argv[i];
-        }    
+        }
         else if(!strcmp(argv[i], "-v")) {
-			printf("wmii-cal-1.0, © 2008 Pontus Andersson\n");
+            printf("wmii-cal-"VERSION", © 2013 Pontus Andersson\n");
             exit(EXIT_SUCCESS);
         }
         else if(!strcmp(argv[i], "-h")) {
-			printf("usage: wmii-cal [-nc] [-fn <wmii_font>]\n");
+            printf("usage: wmii-cal [-nc] [-fn <wmii_font>]\n");
             exit(EXIT_SUCCESS);
-        }    
+        }
+    }
+
+    dpy = XOpenDisplay(getenv("DISPLAY"));
+    x = DisplayWidth(dpy, DefaultScreen(dpy));
+    y = DisplayHeight(dpy, DefaultScreen(dpy));
+    if(XineramaIsActive(dpy)) {
+        xsi = (XineramaScreenInfo *) XineramaQueryScreens(dpy, &i);
+        if(i > 0) {
+            x = xsi[0].x_org + xsi[0].width;
+            y = xsi[0].y_org + xsi[0].height;
+        }
+        free(xsi);
+    }
+    y -= get_wmii_offset(dpy, font);
 
     gtk_init(&argc, &argv);
-    setup_widgets(width, height - get_wmii_offset(dpy, font), no_close);
+    setup_widgets(x, y, no_close);
     gtk_main();
 
     return EXIT_SUCCESS;
